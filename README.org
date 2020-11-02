@@ -1,0 +1,444 @@
+#+TITLE: Bitcoin wallet backup restore test
+#+TAGS: cryptokasten, cryptokasten-lab, bitcoin, wallet, backup
+#+PROPERTY: header-args :session *shell bitcoin-wallet-backup-restore-test* :results silent raw
+#+OPTIONS: ^:nil
+
+[[https://github.com/cryptokasten][file:https://img.shields.io/badge/dynamic/json.svg?url=https://api.github.com/users/cryptokasten&label=Cryptokasten&query=$.public_repos]]
+[[https://github.com/cryptokasten-lab][file:https://img.shields.io/badge/env-red.svg]]
+
+** Table of Contents                                            :TOC_3:QUOTE:
+#+BEGIN_QUOTE
+  - [[#development-environment][Development environment]]
+    - [[#pull-base-docker-image][Pull base docker image]]
+    - [[#run-development-environment][Run development environment]]
+    - [[#stop-development-environment][Stop development environment]]
+  - [[#preparation][Preparation]]
+    - [[#become-a-user][Become a user]]
+    - [[#run-bitcoind][Run bitcoind]]
+  - [[#tests][Tests]]
+    - [[#create-wallet-backup][Create wallet backup]]
+    - [[#create-new-address][Create new address]]
+    - [[#set-fee][Set fee]]
+    - [[#create-transaction][Create transaction]]
+    - [[#generate-1-block][Generate 1 block]]
+    - [[#see-address-info][See address info]]
+    - [[#show-transactions-list][Show transactions list]]
+  - [[#test-backup-wallet][Test backup wallet]]
+    - [[#stop-bitcoind][Stop bitcoind]]
+    - [[#change-wallet][Change wallet]]
+    - [[#start-bitcoind][Start bitcoind]]
+    - [[#get-address-info][Get address info]]
+    - [[#see-transactions-list][See transactions list]]
+#+END_QUOTE
+
+** Development environment
+*** Pull base docker image
+
+Base docker image: [[https://hub.docker.com/r/cryptokasten/bitcoin-regtest-env][cryptokasten/bitcoin-regtest-env:latest]].
+
+#+BEGIN_SRC sh
+docker pull cryptokasten/bitcoin-regtest-env
+#+END_SRC
+
+*** Run development environment 
+
+#+BEGIN_SRC sh
+docker run --rm --name bitcoin-wallet-backup-restore-test -it cryptokasten/bitcoin-regtest-env bash
+#+END_SRC
+
+*** Stop development environment
+
+#+BEGIN_SRC sh
+docker kill bitcoin-wallet-backup-restore-test
+#+END_SRC
+
+** Preparation
+*** Become a user
+
+#+BEGIN_SRC sh
+su bitcoin
+#+END_SRC
+
+*** Run bitcoind
+
+#+BEGIN_SRC sh
+bitcoind -daemon
+#+END_SRC
+
+** Tests
+*** Create wallet backup
+
+#+BEGIN_SRC sh
+bitcoin-cli backupwallet "/tmp/backup.dat"
+#+END_SRC
+
+*** Create new address
+
+#+BEGIN_SRC sh :results replace code :export both
+bitcoin-cli getnewaddress
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_SRC sh
+bcrt1qz5e60hwfvh0053vmhs302gdwf8q8s8e0zzaevy
+#+END_SRC
+
+*** Set fee
+
+#+BEGIN_SRC sh
+bitcoin-cli settxfee 0.0001
+#+END_SRC
+
+*** Create transaction
+
+#+BEGIN_SRC sh :results replace code :export both
+bitcoin-cli sendtoaddress "bcrt1qz5e60hwfvh0053vmhs302gdwf8q8s8e0zzaevy" 25
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_SRC sh
+c58bb853fa94d2a5181f4fb677b7847a19270cb3a33e11897b3438f240044a35
+#+END_SRC
+
+*** Generate 1 block
+
+#+BEGIN_SRC sh
+bitcoin-cli generatetoaddress 1 "bcrt1q8xxljx7666y09fjqhnngnmp5y5erqvvfrqw34a"
+#+END_SRC
+
+*** See address info
+
+#+BEGIN_SRC sh :results replace code :exports both
+bitcoin-cli getaddressinfo "bcrt1qz5e60hwfvh0053vmhs302gdwf8q8s8e0zzaevy"
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_SRC sh
+{
+  "address": "bcrt1qz5e60hwfvh0053vmhs302gdwf8q8s8e0zzaevy",
+  "scriptPubKey": "00141533a7ddc965defa459bbc22f521ae49c0781f2f",
+  "ismine": true,
+  "solvable": true,
+net2hwjl",
+  "iswatchonly": false,
+  "isscript": false,
+  "iswitness": true,
+  "witness_version": 0,
+  "witness_program": "1533a7ddc965defa459bbc22f521ae49c0781f2f",
+  "pubkey": "02043da112ed688c2a053aa26b0cf2f92edff548126e28ff5fef3f49f122d96bc7",
+  "ischange": false,
+  "timestamp": 1604323024,
+  "hdkeypath": "m/0'/0'/1'",
+  "hdseedid": "f8b705e103a1ce27a2fc182567a07aa596752aac",
+  "hdmasterfingerprint": "1ec41c47",
+  "labels": [
+    ""
+  ]
+}
+#+END_SRC
+
+*** Show transactions list
+
+I can see my transaction in listtransactions.
+
+#+BEGIN_SRC sh :results replace code :exports both
+bitcoin-cli listtransactions "*" 2 1
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_SRC sh
+[
+  {
+    "address": "bcrt1qz5e60hwfvh0053vmhs302gdwf8q8s8e0zzaevy",
+    "category": "receive",
+    "amount": 25.00000000,
+    "label": "",
+    "vout": 0,
+    "confirmations": 1,
+    "blockhash": "66e3d36336232c2accd82d27ecb9090450e3d18608771e6ac0ad7f01fb3f3a9e",
+    "blockheight": 102,
+    "blockindex": 1,
+    "blocktime": 1604336066,
+    "txid": "c58bb853fa94d2a5181f4fb677b7847a19270cb3a33e11897b3438f240044a35",
+    "walletconflicts": [
+    ],
+    "time": 1604336058,
+    "timereceived": 1604336058,
+    "bip125-replaceable": "no"
+  },
+  {
+    "address": "bcrt1qz5e60hwfvh0053vmhs302gdwf8q8s8e0zzaevy",
+    "category": "send",
+    "amount": -25.00000000,
+    "label": "",
+    "vout": 0,
+    "fee": -0.00001410,
+    "confirmations": 1,
+    "blockhash": "66e3d36336232c2accd82d27ecb9090450e3d18608771e6ac0ad7f01fb3f3a9e",
+    "blockheight": 102,
+    "blockindex": 1,
+    "blocktime": 1604336066,
+    "txid": "c58bb853fa94d2a5181f4fb677b7847a19270cb3a33e11897b3438f240044a35",
+    "walletconflicts": [
+    ],
+    "time": 1604336058,
+    "timereceived": 1604336058,
+    "bip125-replaceable": "no",
+    "abandoned": false
+  }
+]
+#+END_SRC
+
+** Test backup wallet
+*** Stop bitcoind
+
+#+BEGIN_SRC sh
+bitcoin-cli stop
+#+END_SRC
+
+*** Change wallet
+
+#+BEGIN_SRC sh
+mv /tmp/backup.dat /home/bitcoin/.bitcoin/regtest/wallets/wallet.dat
+#+END_SRC
+
+*** Start bitcoind
+
+#+BEGIN_SRC sh
+bitcoind -daemon
+#+END_SRC
+
+*** Get address info
+
+#+BEGIN_SRC sh :results replace code :exports both
+bitcoin-cli getaddressinfo "bcrt1qz5e60hwfvh0053vmhs302gdwf8q8s8e0zzaevy"
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_SRC sh
+{
+  "address": "bcrt1qz5e60hwfvh0053vmhs302gdwf8q8s8e0zzaevy",
+  "scriptPubKey": "00141533a7ddc965defa459bbc22f521ae49c0781f2f",
+  "ismine": true,
+  "solvable": true,
+net2hwjl",
+  "iswatchonly": false,
+  "isscript": false,
+  "iswitness": true,
+  "witness_version": 0,
+  "witness_program": "1533a7ddc965defa459bbc22f521ae49c0781f2f",
+  "pubkey": "02043da112ed688c2a053aa26b0cf2f92edff548126e28ff5fef3f49f122d96bc7",
+  "ischange": true,
+  "timestamp": 1604323024,
+  "hdkeypath": "m/0'/0'/1'",
+  "hdseedid": "f8b705e103a1ce27a2fc182567a07aa596752aac",
+  "hdmasterfingerprint": "1ec41c47",
+  "labels": [
+  ]
+}
+#+END_SRC
+
+*** See transactions list
+
+I can't see my transaction in listtransactions.
+
+#+BEGIN_SRC sh :results replace code :exports both
+bitcoin-cli listtransactions
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_SRC sh
+[
+  {
+    "address": "bcrt1q8xxljx7666y09fjqhnngnmp5y5erqvvfrqw34a",
+    "category": "immature",
+    "amount": 50.00000000,
+    "label": "",
+    "vout": 0,
+    "confirmations": 10,
+    "generated": true,
+    "blockhash": "749dbe68aca869ef447a60e1fa9f3a7e71250cd05c18dd48e0edb673acaf8cdd",
+    "blockheight": 93,
+    "blockindex": 0,
+    "blocktime": 1604323048,
+    "txid": "20ccd56ac49c31dc905b9056c3741154572afc11ab86526f8cf8a16d64b62961",
+    "walletconflicts": [
+    ],
+    "time": 1604323031,
+    "timereceived": 1604323031,
+    "bip125-replaceable": "no"
+  },
+  {
+    "address": "bcrt1q8xxljx7666y09fjqhnngnmp5y5erqvvfrqw34a",
+    "category": "immature",
+    "amount": 50.00000000,
+    "label": "",
+    "vout": 0,
+    "confirmations": 9,
+    "generated": true,
+    "blockhash": "1845cf8c45758826766bc595c5d788be251cc9990437ce699e95e90106570325",
+    "blockheight": 94,
+    "blockindex": 0,
+    "blocktime": 1604323048,
+    "txid": "88fe19ff6bd6f1d2b0fda4ebd995fc105bc75ab488def0d8a82fa82fbb1f101f",
+    "walletconflicts": [
+    ],
+    "time": 1604323031,
+    "timereceived": 1604323031,
+    "bip125-replaceable": "no"
+  },
+  {
+    "address": "bcrt1q8xxljx7666y09fjqhnngnmp5y5erqvvfrqw34a",
+    "category": "immature",
+    "amount": 50.00000000,
+    "label": "",
+    "vout": 0,
+    "confirmations": 8,
+    "generated": true,
+    "blockhash": "3665416b60c3ac86f773e16b7987f1ef197b824070cd27e96c64c3355ee845c0",
+    "blockheight": 95,
+    "blockindex": 0,
+    "blocktime": 1604323048,
+    "txid": "220fa8917711810b1b9a68bbf4f64ee13dda9802f2b1d1464f42a8d5d5b1d5e9",
+    "walletconflicts": [
+    ],
+    "time": 1604323031,
+    "timereceived": 1604323031,
+    "bip125-replaceable": "no"
+  },
+  {
+    "address": "bcrt1q8xxljx7666y09fjqhnngnmp5y5erqvvfrqw34a",
+    "category": "immature",
+    "amount": 50.00000000,
+    "label": "",
+    "vout": 0,
+    "confirmations": 7,
+    "generated": true,
+    "blockhash": "691517980dfbec2cc0536cc952fa0025bd2ec08c70b0b966f76c969e167d333f",
+    "blockheight": 96,
+    "blockindex": 0,
+    "blocktime": 1604323048,
+    "txid": "37a0bdac6e5230d45a18eb67fd4d8a294bd46828a3922e946a262e16e6dae45d",
+    "walletconflicts": [
+    ],
+    "time": 1604323031,
+    "timereceived": 1604323031,
+    "bip125-replaceable": "no"
+  },
+  {
+    "address": "bcrt1q8xxljx7666y09fjqhnngnmp5y5erqvvfrqw34a",
+    "category": "immature",
+    "amount": 50.00000000,
+    "label": "",
+    "vout": 0,
+    "confirmations": 6,
+    "generated": true,
+    "blockhash": "4fd442a263c1c5ddb705ba4b63e19f922645903e8c1422e8e7e4997ec4617b67",
+    "blockheight": 97,
+    "blockindex": 0,
+    "blocktime": 1604323048,
+    "txid": "528eccd52f56775ec7d340e71a16e21e22e32980e30b2a3e0ebe11dd287493ad",
+    "walletconflicts": [
+    ],
+    "time": 1604323031,
+    "timereceived": 1604323031,
+    "bip125-replaceable": "no"
+  },
+  {
+    "address": "bcrt1q8xxljx7666y09fjqhnngnmp5y5erqvvfrqw34a",
+    "category": "immature",
+    "amount": 50.00000000,
+    "label": "",
+    "vout": 0,
+    "confirmations": 5,
+    "generated": true,
+    "blockhash": "08a711cb2252d7254d15033e2064a40dcdbe00c3df67f47b8bd618e9746e6fce",
+    "blockheight": 98,
+    "blockindex": 0,
+    "blocktime": 1604323049,
+    "txid": "be6565790de3609bc3c1170bb2c9eb694594980ebda8b03d8c9f966e6e5e6f0b",
+    "walletconflicts": [
+    ],
+    "time": 1604323031,
+    "timereceived": 1604323031,
+    "bip125-replaceable": "no"
+  },
+  {
+    "address": "bcrt1q8xxljx7666y09fjqhnngnmp5y5erqvvfrqw34a",
+    "category": "immature",
+    "amount": 50.00000000,
+    "label": "",
+    "vout": 0,
+    "confirmations": 4,
+    "generated": true,
+    "blockhash": "09031b49e01f6696630573a29bcd5d112a2dca6a7d25d4980a241c50debf936d",
+    "blockheight": 99,
+    "blockindex": 0,
+    "blocktime": 1604323049,
+    "txid": "5f0b1ea5d52b71718fbbda9f8a997c751e53a3463d4ec86042ec2efb7734f295",
+    "walletconflicts": [
+    ],
+    "time": 1604323031,
+    "timereceived": 1604323031,
+    "bip125-replaceable": "no"
+  },
+  {
+    "address": "bcrt1q8xxljx7666y09fjqhnngnmp5y5erqvvfrqw34a",
+    "category": "immature",
+    "amount": 50.00000000,
+    "label": "",
+    "vout": 0,
+    "confirmations": 3,
+    "generated": true,
+    "blockhash": "04c808da5890a9876e1a36b8f03b822b9110d1c4b891d9cf14319c9a3a4b53ff",
+    "blockheight": 100,
+    "blockindex": 0,
+    "blocktime": 1604323049,
+    "txid": "233fb4f27b42e5a865a28a05257329a4e146dbce58659af36463172c56ae3adb",
+    "walletconflicts": [
+    ],
+    "time": 1604323031,
+    "timereceived": 1604323031,
+    "bip125-replaceable": "no"
+  },
+  {
+    "address": "bcrt1q8xxljx7666y09fjqhnngnmp5y5erqvvfrqw34a",
+    "category": "immature",
+    "amount": 50.00000000,
+    "label": "",
+    "vout": 0,
+    "confirmations": 2,
+    "generated": true,
+    "blockhash": "4c004cd1f8db2c6a8a4040947e330ababb7045f1554c8fab5e462b4bf3de2984",
+    "blockheight": 101,
+    "blockindex": 0,
+    "blocktime": 1604323049,
+    "txid": "853562ba34340d9ee485ef631474ce92c37f6bc7021cb434bb6654ea3e89451f",
+    "walletconflicts": [
+    ],
+    "time": 1604323031,
+    "timereceived": 1604323031,
+    "bip125-replaceable": "no"
+  },
+  {
+    "address": "bcrt1q8xxljx7666y09fjqhnngnmp5y5erqvvfrqw34a",
+    "category": "immature",
+    "amount": 50.00001410,
+    "label": "",
+    "vout": 0,
+    "confirmations": 1,
+    "generated": true,
+    "blockhash": "66e3d36336232c2accd82d27ecb9090450e3d18608771e6ac0ad7f01fb3f3a9e",
+    "blockheight": 102,
+    "blockindex": 0,
+    "blocktime": 1604336066,
+    "txid": "e2b94ed7bee01cef2db1c62fda9138b5528bbb916e647183c31a98966c1651ba",
+    "walletconflicts": [
+    ],
+    "time": 1604336066,
+    "timereceived": 1604336121,
+    "bip125-replaceable": "no"
+  }
+]
+#+END_SRC
+
